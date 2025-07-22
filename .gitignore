@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.h5
+filtered_dataset/
+.DS_Store
+*.pyc
+*.pyo

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Animal Classifier</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body 
+    {
+      background: linear-gradient(to bottom right, #f0f4ff, #ffffff);
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans text-gray-800">
+
+  <!-- Classifier UI -->
+  <section class="min-h-screen flex items-center justify-center py-20">
+    <div class="bg-white shadow-2xl rounded-2xl p-10 max-w-lg w-full text-center space-y-6">
+      <h1 class="text-3xl font-bold">🐾 Animal Image Classifier</h1>
+      <p class="text-gray-500">Upload a photo of a cat or dog and the model will classify which it thinks it is.</p>
+
+      <input type="file" id="imageInput" accept="image/*" class="block w-full border border-gray-300 rounded-lg p-2" />
+      <button id="predictBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+        Predict
+      </button>
+
+      <div id="resultText" class="text-lg font-medium text-gray-700 min-h-[24px]"></div>
+    </div>
+  </section>
+
+  <!-- How It's Made Section -->
+<section class="py-24 bg-gray-100 px-6">
+  <div class="max-w-4xl mx-auto text-gray-800">
+    <h2 class="text-4xl font-bold text-center mb-10">How It’s Made</h2>
+
+    <p class="mb-6">
+      This image classification web application was developed entirely from scratch using <strong>Python, TensorFlow, Flask,</strong> and <strong>vanilla frontend</strong>. It allows users to upload an image of a cat or dog and returns a prediction based on a custom trained convolutional neural network (CNN).
+    </p>
+
+    <h3 class="text-2xl font-semibold mb-2">Model Info</h3>
+    <p class="mb-6">
+      This model was trained on a dataset of ~19,000 labeled images of cats and dogs. The model was implemented using The model was built using tf.keras.Sequential, which is a way to create a neural network by adding layers one after the other. Each layer passes its output to the next, so the data flows straight through from the input image to the final prediction. The model is built entirely from scratch without using pretrained weights or external model libraries.
+    </p>
+    <p class="mb-6">
+      There are three convolutional blocks using <code>Conv2D</code> and <code>MaxPooling2D</code>, with a <code>Flatten</code> layer and dense output layers with <code>softmax</code> activation function for binary classification.
+    </p>
+
+    <h3 class="text-2xl font-semibold mb-2">Problems I ran into</h3>
+    <p class="mb-6">
+      One of the biggest issues I had was after building the basic mode, the accuracy was very low. I found out it was due to a common issue known as overfitting, which is when the model learns the training data too well, including its noise, so it performs poorly on new, unseen data. To fix this, I implemented data augmentation using <code>tf.keras.Sequential</code> with <code>RandomFlip</code>, <code>RandomRotation</code>, and <code>RandomZoom</code> layers. This artificially increased the diversity of training examples which helped the model generalize better by simulating variations in input images. Augmentation was applied only to the training dataset, not the validation set.
+    </p>
+    <p class="mb-6">
+      I also introduced early stopping using <code>EarlyStopping</code> from <code>tf.keras.callbacks</code> which kept track of the validation loss and automatically stopped training when no further improvements were seen for 10 consecutive epochs. This reduced the risk of overfitting.
+    </p>
+
+    <h3 class="text-2xl font-semibold mb-2">GPU Optimization</h3>
+    <p class="mb-6">
+      To optimize GPU memory usage during training, I configured TensorFlow with <code>tf.config.experimental.set_memory_growth()</code> on all detected GPUs. This allowed the program to allocate memory dynamically as needed, preventing TensorFlow from pre-allocating all available memory and ensuring compatibility with other GPU processes running in parallel.
+    </p>
+
+    <h3 class="text-2xl font-semibold mb-2">Backend</h3>
+    <p class="mb-6">
+      Once trained, the model was saved in <code>.h5</code> format and loaded into a Flask application. The backend uses both a <code>GET</code> route to render the frontend and a <code>POST</code> route at <code>/predict</code> that accepts user-submitted image files. Uploaded images are processed using <code>Pillow (PIL)</code>, resized to match the model’s input shape, normalized to a 0–1 scale, and passed into the model for prediction. The top predicted class and its confidence score are then returned as JSON.
+    </p>
+
+    <h3 class="text-2xl font-semibold mb-2">Frontend</h3>
+    <p class="mb-6">
+      The frontend is implemented in HTML and styled with TailwindCSS.
+    </p>
+  </div>
+</section>
+
+
+  <script>
+    document.getElementById('predictBtn').onclick = () => {
+      const fileInput = document.getElementById('imageInput');
+      const resultText = document.getElementById('resultText');
+
+      if (!fileInput.files[0]) 
+      {
+        resultText.textContent = '❌ Please select an image first.';
+        return;
+      }
+
+      resultText.textContent = '🔎 Predicting...';
+
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+
+      fetch('/predict', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => 
+        {
+          if (data.error) 
+          {
+            resultText.textContent = '⚠️ Error: ' + data.error;
+          }
+           
+          else 
+          {
+            const pct = (data.confidence * 100).toFixed(1);
+            resultText.textContent = `✅ It's a ${data.label} with ${pct}% confidence`;
+          }
+        })
+        .catch(() => 
+        {
+          resultText.textContent = '❌ Server error.';
+        });
+    };
+  </script>
+</body>
+</html>
