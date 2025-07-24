@@ -1,9 +1,10 @@
 services:
   - type: web
     name: animal-classifier
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python app.py"
-    envVars:
-      - key: FLASK_ENV
-        value: production
+    runtime: python
+    pythonVersion: 3.10.13        
+    buildCommand: >
+      pip install -r requirements.txt &&
+      curl -L -o animal_classifier.h5 \
+      https://github.com/Moodie0079/animal-classifier/releases/download/v1.0/animal_classifier.h5
+    startCommand: gunicorn app:app
