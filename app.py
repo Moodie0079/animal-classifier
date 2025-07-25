@@ -1,22 +1,22 @@
 from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
+import numpy as np
+from PIL import Image
 
-# 1. Initialize Flask
 app = Flask(__name__)
 
-# 2. Load trained model
-MODEL_PATH = "animal_classifier.h5"
-model = tf.keras.models.load_model(MODEL_PATH)
+# Load trained model (in this case we are loading the lite model due to space issue with free Render hosting)
+TFLITE_PATH = "animal_classifier.tflite"
+interpreter = tf.lite.Interpreter(model_path=TFLITE_PATH)
+interpreter.allocate_tensors()
+input_details  = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
-# 3. 
 class_names = ['cat', 'dog']
 
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
-
-import numpy as np
-from PIL import Image
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -34,9 +34,11 @@ def predict():
     arr = np.array(img, dtype='float32') / 255.0
     arr = np.expand_dims(arr, axis=0)  # shape (1,128,128,3)
 
-    # Find result
-    preds = model.predict(arr)[0]
-    idx = int(np.argmax(preds))
+    # Run inference with the Lite interpreter
+    interpreter.set_tensor(input_details[0]["index"], arr.astype("float32"))
+    interpreter.invoke()
+    preds = interpreter.get_tensor(output_details[0]["index"])[0]
+    idx   = int(np.argmax(preds))
     label = class_names[idx]
     confidence = float(preds[idx])
 
