@@ -34,10 +34,16 @@ def predict():
     # arr = np.array(img, dtype='float32') / 255.0
     # arr = np.expand_dims(arr, axis=0)  # shape (1,128,128,3)
 
-    # FOR UNIT 8 MODEL******* Preprocess: resize (NO division by 255 for uint8 model)
-    img = img.resize((256, 256))
-    arr = np.array(img, dtype=np.uint8)        
-    arr = np.expand_dims(arr, axis=0)          # shape (1,256,256,3)
+    # FOR UINT8 MODEL******* Preprocess: resize (NO division by 255 for uint8 model)
+    # img = img.resize((256, 256))
+    # arr = np.array(img, dtype=np.uint8)        
+    # arr = np.expand_dims(arr, axis=0)          # shape (1,256,256,3)
+
+    # ----------- updated preprocessing for int8 model ------------
+    img = img.resize((256, 256))            # resize first
+    arr = np.array(img, dtype=np.float32)   # to float32
+    arr = arr / 255.0                       # scale to 0-1
+    arr = np.expand_dims(arr, axis=0)       # shape (1,256,256,3)
 
     # Run inference with the Lite interpreter
     # interpreter.set_tensor(input_details[0]["index"], arr.astype("float32"))
@@ -46,9 +52,11 @@ def predict():
     interpreter.invoke()
     preds = interpreter.get_tensor(output_details[0]["index"])[0]
 
-    # de-quantise uint8 → float32 *******CAN REMOVE FOR h5 MODEL
-    scale, zp = output_details[0]["quantization"]   
-    preds = (preds.astype(np.float32) - zp) * scale
+    # de-quantise uint8/int8 → float32 *******CAN REMOVE FOR h5 MODEL
+    if output_details[0]["dtype"] in (np.uint8, np.int8):
+        scale, zp = output_details[0]["quantization"]   
+        preds = (preds.astype(np.float32) - zp) * scale
+
     preds = tf.nn.softmax(preds).numpy()
 
     idx   = int(np.argmax(preds))
