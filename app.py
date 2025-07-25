@@ -29,15 +29,26 @@ def predict():
     except:
         return jsonify(error='Invalid image'), 400
 
-    # Preprocess: resize & normalize
+    # Preprocess: resize & normalize FOR h5 MODEL********
+    # img = img.resize((256, 256))
+    # arr = np.array(img, dtype='float32') / 255.0
+    # arr = np.expand_dims(arr, axis=0)  # shape (1,128,128,3)
+
+    # FOR UNIT 8 MODEL******* Preprocess: resize (NO division by 255 for uint8 model)
     img = img.resize((256, 256))
-    arr = np.array(img, dtype='float32') / 255.0
-    arr = np.expand_dims(arr, axis=0)  # shape (1,128,128,3)
+    arr = np.array(img, dtype=np.uint8)        
+    arr = np.expand_dims(arr, axis=0)          # shape (1,256,256,3)
 
     # Run inference with the Lite interpreter
     interpreter.set_tensor(input_details[0]["index"], arr.astype("float32"))
     interpreter.invoke()
     preds = interpreter.get_tensor(output_details[0]["index"])[0]
+
+    # de-quantise uint8 → float32 *******CAN REMOVE FOR h5 MODEL
+    scale, zp = output_details[0]["quantization"]   
+    preds = (preds.astype(np.float32) - zp) * scale
+    preds = tf.nn.softmax(preds).numpy()
+
 
     if output_details[0]["dtype"] == np.int8:          # de-quantize int8 output
             scale, zero_point = output_details[0]["quantization"]
