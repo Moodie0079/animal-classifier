@@ -38,6 +38,11 @@ def predict():
     interpreter.set_tensor(input_details[0]["index"], arr.astype("float32"))
     interpreter.invoke()
     preds = interpreter.get_tensor(output_details[0]["index"])[0]
+
+    if output_details[0]["dtype"] == np.int8:          # de-quantize int8 output
+            scale, zero_point = output_details[0]["quantization"]
+            preds = scale * (preds.astype(np.float32) - zero_point)
+
     idx   = int(np.argmax(preds))
     label = class_names[idx]
     confidence = float(preds[idx])
