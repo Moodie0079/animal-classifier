@@ -40,7 +40,9 @@ def predict():
     arr = np.expand_dims(arr, axis=0)          # shape (1,256,256,3)
 
     # Run inference with the Lite interpreter
-    interpreter.set_tensor(input_details[0]["index"], arr.astype("float32"))
+    # interpreter.set_tensor(input_details[0]["index"], arr.astype("float32"))
+    interpreter.set_tensor(input_details[0]["index"], arr)
+
     interpreter.invoke()
     preds = interpreter.get_tensor(output_details[0]["index"])[0]
 
@@ -48,11 +50,6 @@ def predict():
     scale, zp = output_details[0]["quantization"]   
     preds = (preds.astype(np.float32) - zp) * scale
     preds = tf.nn.softmax(preds).numpy()
-
-
-    if output_details[0]["dtype"] == np.int8:          # de-quantize int8 output
-            scale, zero_point = output_details[0]["quantization"]
-            preds = scale * (preds.astype(np.float32) - zero_point)
 
     idx   = int(np.argmax(preds))
     label = class_names[idx]
