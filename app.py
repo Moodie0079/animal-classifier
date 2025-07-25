@@ -6,7 +6,7 @@ from PIL import Image
 app = Flask(__name__)
 
 # Load trained model (in this case we are loading the lite model due to space issue with free Render hosting)
-TFLITE_PATH = "animal_classifier.tflite"
+TFLITE_PATH = "animal_classifier_fp16.tflite"
 interpreter = tf.lite.Interpreter(model_path=TFLITE_PATH)
 interpreter.allocate_tensors()
 input_details  = interpreter.get_input_details()
