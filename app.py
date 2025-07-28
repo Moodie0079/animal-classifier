@@ -36,25 +36,19 @@ def predict():
 
     # FOR UINT8 / INT8 MODEL*******  (keep input the model expects)
     img = img.resize((256, 256))
-    arr_float = np.array(img, dtype=np.float32) / 255.0      # 0-1 floats
-    arr_float = np.expand_dims(arr_float, axis=0)            # (1,256,256,3)
+    arr = np.array(img, dtype=np.float32) / 255.0
+    arr = np.expand_dims(arr, axis=0)  # Shape: (1, 256, 256, 3)
 
-    if input_details[0]["dtype"] in (np.uint8, np.int8):
-        # quantise input
-        in_scale, in_zp = input_details[0]["quantization"]
-        arr_quant = np.round(arr_float / in_scale + in_zp).astype(input_details[0]["dtype"])
-        interpreter.set_tensor(input_details[0]["index"], arr_quant)
-    else:
-        interpreter.set_tensor(input_details[0]["index"], arr_float)
+    # Set the input tensor
+    interpreter.set_tensor(input_details[0]["index"], arr)
 
+    # Run inference
     interpreter.invoke()
+
+    # Get the output tensor (it will be float32)
     preds = interpreter.get_tensor(output_details[0]["index"])[0]
 
-    # de-quantise uint8 / int8 → float32 *******CAN REMOVE FOR h5 MODEL
-    if output_details[0]["dtype"] in (np.uint8, np.int8):
-        out_scale, out_zp = output_details[0]["quantization"]
-        preds = (preds.astype(np.float32) - out_zp) * out_scale
-
+    # Apply softmax to get probabilities
     preds = tf.nn.softmax(preds).numpy()
 
     idx   = int(np.argmax(preds))
