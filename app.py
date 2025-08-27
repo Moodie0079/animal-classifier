@@ -2,9 +2,13 @@ from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB uploads, avoid giant images
 
 MODEL_PATH = "animal_classifier.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
+
+# Warm-up prediction to compile graph/cache for faster first request
+_ = model.predict(np.zeros((1, 256, 256, 3), dtype=np.float32), verbose=0)
  
 class_names = ['cat', 'dog']
 
@@ -22,18 +26,17 @@ def predict():
     file = request.files['image']
     
     try:
-        # Read raw bytes
-        image_bytes = file.stream.read()
+        # Read raw bytes once
+        raw = file.read()
         
-        # Add size validation before processing
-        if len(image_bytes) > 10 * 1024 * 1024:  # 10MB limit
-            return jsonify(error='Image too large'), 400
+        # Robust TF-only decode with animation protection
+        img = tf.io.decode_image(raw, channels=3, expand_animations=False)  # no GIF stacks
+        img.set_shape([None, None, 3])
         
-        # Use TensorFlow's image pipeline (matches training)
-        img = tf.io.decode_image(image_bytes, channels=3, dtype=tf.uint8)
-        img = tf.image.resize(img, [256, 256])
+        # Fast downscale to model size with antialiasing
+        img = tf.image.resize(img, [256, 256], antialias=True)
         img = tf.cast(img, tf.float32) / 255.0
-        arr = tf.expand_dims(img, 0)  # Add batch dimension
+        arr = tf.expand_dims(img, 0).numpy()  # Convert to numpy for model.predict
         
     except Exception as e:
         return jsonify(error=f'Invalid image: {str(e)}'), 400
