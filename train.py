@@ -2,9 +2,9 @@ import tensorflow as tf
 import os
 
 from tensorflow.keras import layers, models
-from tensorflow.keras.callbacks import EarlyStopping  # Added EarlyStopping import
+from tensorflow.keras.callbacks import EarlyStopping 
 
-# Configures GPU memory growth, stops us from using all available memory
+# Configures GPU memory growth, stops from using all available memory
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
@@ -19,7 +19,7 @@ data_augmentation = tf.keras.Sequential([
 
 # Dataset parameters
 DATA_DIR    = "filtered_dataset"
-IMG_SIZE    = (256, 256)    # All images will be resized to this size
+IMG_SIZE    = (256, 256)   
 BATCH_SIZE  = 32
 VAL_SPLIT   = 0.2
 SEED        = 123
@@ -65,7 +65,7 @@ val_ds   = val_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
 
 print(f"Classes: {class_names}")
 
-# Model Definition
+# Model
 model = models.Sequential([
     # 1st conv block
     layers.Conv2D(32, (3, 3), activation='relu', input_shape=(256, 256, 3)),
@@ -86,7 +86,7 @@ model = models.Sequential([
     layers.Dense(256, activation='relu'),
     # layers.Dropout(0.5),  # Temporarily disabled
 
-    # Output layer: 2 classes (e.g., cat vs dog)
+    # Output layer: 2 classes
     layers.Dense(2, activation='softmax')
 ])
 
@@ -97,14 +97,14 @@ model.compile(
     metrics=['accuracy']
 )
 
-# EarlyStopping callback to halt training when val_loss stops improving
+# EarlyStopping callback to stop training when val_loss stops improving
 early_stop = EarlyStopping(
     monitor='val_loss',
     patience=10,
     restore_best_weights=True
 )
 
-# Train the model with early stopping
+# Train the model 
 epochs = 100
 history = model.fit(
     train_ds,
