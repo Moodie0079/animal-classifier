@@ -1,22 +1,26 @@
 from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
+import numpy as np
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB uploads, avoid giant images
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 
 MODEL_PATH = "animal_classifier.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Warm-up prediction to compile graph/cache for faster first request
-_ = model.predict(np.zeros((1, 256, 256, 3), dtype=np.float32), verbose=0)
+# _ = model.predict(np.zeros((1, 256, 256, 3), dtype=np.float32), verbose=0)
+
+@app.route('/healthz')
+def healthz():
+    return "ok", 200
+
  
 class_names = ['cat', 'dog']
 
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
-
-import numpy as np
 
 @app.route('/predict', methods=['POST'])
 def predict():
