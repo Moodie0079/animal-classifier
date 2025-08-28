@@ -9,7 +9,12 @@ MODEL_PATH = "animal_classifier.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
 
 # Warm-up prediction to compile graph/cache for faster first request
-_ = model.predict(np.zeros((1, 256, 256, 3), dtype=np.float32), verbose=0)
+# _ = model.predict(np.zeros((1, 256, 256, 3), dtype=np.float32), verbose=0)
+
+@app.route('/healthz')
+def healthz():
+    return "ok", 200
+
  
 class_names = ['cat', 'dog']
 
