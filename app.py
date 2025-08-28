@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB uploads, avoid giant images
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 
 MODEL_PATH = "animal_classifier.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
