@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import tensorflow as tf
+import numpy as np
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
@@ -15,8 +16,6 @@ class_names = ['cat', 'dog']
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
-
-import numpy as np
 
 @app.route('/predict', methods=['POST'])
 def predict():
